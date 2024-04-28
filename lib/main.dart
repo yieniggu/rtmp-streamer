@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:flutter/material.dart';
 import "package:flutter/services.dart";
-import 'package:path_provider/path_provider.dart';
 import 'package:rtmp_broadcaster/camera.dart';
 import 'package:wakelock/wakelock.dart';
 import 'package:rtmp_broadcaster_test/models/config.dart';
@@ -227,16 +225,16 @@ class TakePictureScreenState extends State<TakePictureScreen>
               : null,
         ),
         IconButton(
-          icon: controller != null && (isRecordingPaused || isStreamingPaused)
+          icon: controller != null && isStreamingPaused
               ? Icon(Icons.play_arrow)
               : Icon(Icons.pause),
           color: Colors.blue,
           onPressed: controller != null &&
                   isControllerInitialized &&
-                  (isRecordingVideo || isStreamingVideoRtmp)
-              ? (controller != null && (isRecordingPaused || isStreamingPaused)
-                  ? onResumeButtonPressed
-                  : onPauseButtonPressed)
+                  isStreamingVideoRtmp
+              ? (controller != null && isStreamingPaused
+                  ? onResumeStreamingButtonPressed
+                  : onPauseStreamingButtonPressed)
               : null,
         ),
         IconButton(
@@ -381,33 +379,8 @@ class TakePictureScreenState extends State<TakePictureScreen>
         if (mounted) setState(() {});
         showInSnackBar('Video streamed to: $url');
       });
-    } else {
-      stopVideoRecording().then((_) {
-        if (mounted) setState(() {});
-      });
     }
     Wakelock.disable();
-  }
-
-  void onPauseButtonPressed() {
-    pauseVideoRecording().then((_) {
-      if (mounted) setState(() {});
-      showInSnackBar('Video recording paused');
-    });
-  }
-
-  void onResumeButtonPressed() {
-    resumeVideoRecording().then((_) {
-      if (mounted) setState(() {});
-      showInSnackBar('Video recording resumed');
-    });
-  }
-
-  void onStopStreamingButtonPressed() {
-    stopVideoStreaming().then((_) {
-      if (mounted) setState(() {});
-      showInSnackBar('Video not streaming to: $url');
-    });
   }
 
   void onPauseStreamingButtonPressed() {
@@ -424,78 +397,7 @@ class TakePictureScreenState extends State<TakePictureScreen>
     });
   }
 
-  Future<String?> startVideoRecording() async {
-    if (!isControllerInitialized) {
-      showInSnackBar('Error: select a camera first.');
-      return null;
-    }
-
-    final Directory? extDir = await getExternalStorageDirectory();
-    if (extDir == null) return null;
-
-    final String dirPath = '${extDir.path}/Movies/flutter_test';
-    await Directory(dirPath).create(recursive: true);
-    final String filePath = '$dirPath/${timestamp()}.mp4';
-
-    if (isRecordingVideo) {
-      // A recording is already started, do nothing.
-      return null;
-    }
-
-    try {
-      await controller!.startVideoRecording(filePath);
-    } on CameraException catch (e) {
-      _showCameraException(e);
-      return null;
-    }
-    return filePath;
-  }
-
-  Future<void> stopVideoRecording() async {
-    if (!isRecordingVideo) {
-      return null;
-    }
-
-    try {
-      await controller!.stopVideoRecording();
-    } on CameraException catch (e) {
-      _showCameraException(e);
-      return null;
-    }
-  }
-
-  Future<void> pauseVideoRecording() async {
-    try {
-      if (controller!.value.isRecordingVideo!) {
-        await controller!.pauseVideoRecording();
-      }
-      if (controller!.value.isStreamingVideoRtmp!) {
-        await controller!.pauseVideoStreaming();
-      }
-    } on CameraException catch (e) {
-      _showCameraException(e);
-      rethrow;
-    } catch (e) {
-      print(e);
-    }
-  }
-
-  Future<void> resumeVideoRecording() async {
-    try {
-      if (controller!.value.isRecordingVideo!) {
-        await controller!.resumeVideoRecording();
-      }
-      if (controller!.value.isStreamingVideoRtmp!) {
-        await controller!.resumeVideoStreaming();
-      }
-    } on CameraException catch (e) {
-      _showCameraException(e);
-      rethrow;
-    } catch (e) {
-      print(e);
-    }
-  }
-
+  
   Future<String?> startVideoStreaming() async {
     await stopVideoStreaming();
     if (controller == null) {
