@@ -114,6 +114,7 @@ class TakePictureScreenState extends State<TakePictureScreen>
     super.initState();
 
     _storeNameController.text = widget.config.name;
+    _rtmpIpEndpointController.text = widget.config.RTMPIPEndpoint;
     isCapturing = widget.config.capturing;
     initDate = TimeOfDay(hour: widget.config.openHour, minute: 0);
     endDate = TimeOfDay(hour: widget.config.closeHour, minute: 0);
@@ -421,7 +422,7 @@ class TakePictureScreenState extends State<TakePictureScreen>
 
     // Open up a dialog for the url
     String myUrl =
-        'rtmp://${_rtmpIpEndpointController.text}/${urlStoreParam}-${formatted}-raw';
+        'rtmp://${_rtmpIpEndpointController.text}/live/${urlStoreParam}-${formatted}-raw';
 
     print("url: ${myUrl}");
 
@@ -521,8 +522,8 @@ class TakePictureScreenState extends State<TakePictureScreen>
           child: TextField(
             onSubmitted: (value) => setState(() {
               _rtmpIpEndpointController.text = value;
-              Config temp = Config(widget.config.id, value, initDate.hour,
-                  endDate.hour, isCapturing, _rtmpIpEndpointController.text);
+              Config temp = Config(widget.config.id, _storeNameController.text, initDate.hour,
+                  endDate.hour, isCapturing, value);
 
               updateConfig(temp);
             }),
